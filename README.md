@@ -363,6 +363,9 @@ It’s mostly suggested when wanting to detect the player/allies/opponents by de
 An example of usage in Pyla is detecting when the player gets idle disconnected because it’s only when there’s an error message that there’s a lot of a specific type of gray pixel.  
 It’s also used to detect if the gadget or hypercharge is ready by looking for the specific green/purple pixels in a small area (the smaller the area you can reliably use, the more accurate it gets, because there’s less pixels that could be distracting the thing we want to find).  
 
+## Libraries Starter Pack
+See Python Libraries starter pack.txt for what I would recommend as libraries to make a good bot.
+
 # Contributing 
 
 If you want to contribute to this repository, there's a few things you can do :
@@ -377,6 +380,7 @@ If you want to contribute to this repository, there's a few things you can do :
 - give examples of other types of models other than YOLO
 - show how to use .onnx models
 - start a section about Reinforcement Learning (some ideas : what it is, the basic terms, how it could work in brawl stars, some algorithms that could work, ideas, etc...)
+- start a section about the different libraries to be used to make a menu (customtkinter, pygame, PyQT5 etc...)
 
 # Current Available Models
 | Model Name | Model Base | Model Type | Author | Classes | File Extensions | Date Uploaded |
@@ -386,5 +390,6 @@ If you want to contribute to this repository, there's a few things you can do :
 |PylaSpecificBrawlerDetectorV1|YOLOv8|specific brawler detection and wall detection |iyordanov| ['ammo', 'ball', 'damage_taken', 'defeat', 'draw', 'enemy_health_bar', 'enemy_position', 'gadget', 'gem', 'hypercharge', 'player_health_bar', 'player_position', 'respawning', 'shot_success', 'super', 'teammate_health bar', 'teammate_position', 'victory', 'wall', 'bush', '8bit', 'amber', 'ash', 'barley', 'bea', 'belle', 'bibi', 'bo', 'bonnie', 'brock', 'bull', 'buster', 'buzz', 'byron', 'carl', 'charlie', 'chester', 'chuck', 'colette', 'colt', 'cordelious', 'crow', 'darryl', 'doug', 'dynamike', 'edgar', 'primo', 'emz', 'eve', 'fang', 'frank', 'gale', 'gene', 'grom', 'gray', 'griff', 'gus', 'hank', 'jacky', 'janet', 'jessie', 'kit', 'larry_lawrie', 'leon', 'lola', 'lou', 'mandy', 'maisie', 'max', 'meg', 'melodie', 'mico', 'mortis', 'mrp', 'nani', 'nita', 'otis', 'pam', 'penny', 'piper', 'poco', 'rico', 'rosa', 'rt', 'ruffs', 'sam', 'sandy', 'shelly', 'spike', 'sprout', 'stu', 'squeak', 'surge', 'tara', 'tick', 'willow', 'lily', 'enemy_ability', 'ally_ability'] | .pt and .onnx |16/06/2025|
 |PylaWallDetectorV1|YOLOv11|wall detection|angelfire| ["bush", "blue_post", "block_of_stone&grass", "cubic_wall", "wooden_barrel", "wooden_box", "wooden_box", "wooden_fence", "invincible_wall", "cactus", "potted_plant" ,"yellow_wall", "blue_barrel", "metallic_fence", "blue_weights"] | .pt and .onnx |16/06/2025|
 
+To submit a model, make a pull request containing your model in the correct folder (or in a new model type folder if it doesn't fit in any current one) and also add a line to the Available Models Table with the necessary info
 
 # Join PylaAI discord to talk to other Devs and maybe join a potential Brawl Stars Bot competition : https://discord.com/invite/ehMRX9hpFN 
