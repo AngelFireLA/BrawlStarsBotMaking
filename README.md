@@ -113,3 +113,252 @@ To do that, you once again have a few options :
 
 
 Some people also talked about using ADB to send inputs directly to the emulator, but I’m not knowledgeable enough to know if it’s possible without drawbacks, and if yes how, so unless someone expands on this section, we will stay with keyboard-only inputs.
+
+# Using the Screenshots
+
+## Knowing what part of the game you are in
+
+You can now get screenshots of the emulator and you know you want to use that information to turn into keyboard/mouse presses, so the first thing is to actually know what you’re looking at, if you’re in the lobby, in a battle, waiting for a battle to start, etc…
+
+### Template Matching
+
+The easiest way is to use **Template Matching**. It’s simple, you take an image of your choice, and you check if it’s inside a given image.  
+For example, to know if you’re in the Lobby, you could look for the brawler menu button icon inside the screenshot.  
+Someone wanted to make a bot that would tell them if they’re still in matchmaking, and you could use Template Matching to easily do that, by searching for the “Exit” button (when it’s still red, as when it isn’t anymore, it means we found a match).
+
+For that, you can use the library OpenCV which I mentioned before, as it has a function specially for that.  
+Here’s a simple function that checks if an image (the template) is in the screenshot :  
+```python  
+confidence_min = 0.8 # confidence is between 0-1 and the closer to 1, the more sure the predictions need to be to count, because sometimes there could be something that doesn’t match exactly so it’s not sure  
+def is_template_in_screenshot(template, screenshot):  
+    result = cv2.matchTemplate(template, screenshot, cv2.TM_CCOEFF_NORMED)  
+    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)  
+    if max_val > confidence_min:  
+        return True  
+    else:  
+        return False  
+```
+
+The template image would be an image you saved locally and loaded somewhere else in your script.
+
+Tip : You would preferably crop the screenshot before so it only looks in the area you know the template is supposed to be, because it makes it faster and you’re less likely to find something else that would cause a false detection. 
+
+You can use OpenCV to crop an image too :   
+```python  
+# you load opencv, your screenshot etc…  
+# if we consider (x1, y1) the coordinates of the top left corner, and (x2, y2) the coordinates of the bottom right corner, of the area of the image you want to get  
+x1, y1, x2, y2 = 0, 0, 100, 100  
+cropped_image = screenshot[y1:y2, x1:x2] #returns the are between the corners (0, 0) and (100, 100)  
+```
+
+### OCR
+
+Another way to know where you are is to use OCR.   
+OCR is detecting text within an image.
+
+It’s useful because you could use it to detect if the bot won or lost a match by detecting the texts “Victory” or “Defeat” or “Draw” or you can use it in the brawler menu to find the position of the icon of the brawler you’re looking for. (you might have to scroll, for that, using a keyboard, you can press the mouse, move it, and then release the mouse, and it will act as a scroll).
+
+There are 2 main libraries that you could use (both libraries don’t work perfectly with the brawl stars text but it should be good enough and the first one you could try make it better yourself):
+
+- Pytesseract : tesseract is the most well known OCR library, it is very configurable, you can quite easily train it to recognize a specific font, but it’s configurability is also a downside because it takes a lot of tries to find the best settings, and it’s really slow so I don’t recommend it if speed is your priority.  
+- - Easyocr : Like it’s name says, easyocr is a libraries that allow OCR without a lot of setup, is quite fast (especially with gpu version of the torch library, we’ll talk about that later in the additional tips) and works well enough with Brawl Stars (it is what Pyla uses).  
+  It’s best to recognize usual letters and numbers.  
+  ```python  
+  Import easyocr  
+    
+  reader = easyocr.Reader(['en']) # this is the object you’ll use to extract the text, just define it once at the top of your script  
+  # you get your screenshot…  
+  results = reader.readtext('screenshot.png')  
+  # results is a list of tuples (bounding box, text, confidence) with bounding box being the four corners of the area of the text [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]  
+    
+  # to get the text you could do simply   
+  text_result = results[0][1] # if you expect the text only on one line  
+  ```
+
+## Detecting Enemies and other things in battle
+
+### Object Detection
+
+The most reliable external way to things entities such as player, allies, enemies, pets, etc… is using Object Detection. More precisely, it’s using AI vision models to find objects (player, enemy, etc..) inside a given image.
+
+The problem is that if we find one of those models and give it a screenshot of Brawl Stars, it won’t find anything because it wasn’t trained to find Brawl Stars things.
+
+A model’s **classes** is the list of of things a specific model will detect. A basic model could just have the “cat” class because it’s looking for cats only.
+
+So we’ll have to either use a Brawl Stars specialized model or we’ll have to train our own model.  
+To be clear, it would be much more difficult to make a global Brawl Stars model, it’s more stable to make a model dedicated to detect a specific type of thing.  
+For example, there’s a model that can detect entities such as player/enemies/allies, but there’s also a separate model to detect the different wall tiles.
+
+#### Using an existing model
+
+Training your own model is a lot of work, so when you’re starting it’s recommended to use one of the models already made by the community, which are inside this github repository in the models folder.
+
+Currently, all the models are YOLO models, usually YOLOv8 or YOLOv11 because they have a dedicated library, **ultralytics**, which makes them the easiest to use and train.
+
+Models can be under two file extensions : .pt and .onnx :
+
+- .pt are the original models that are used with ultralytics.  
+- .onnx models are compiled versions of the .pt models that are a bit more difficult to use but they are slightly faster, and with the correct libraries they can be used by nearly all types of GPUs (that aren’t too old) without needing any modification.
+
+I personally recommend using .pt files unless you know what you’re doing with the .onnx files.
+
+Let’s now see how to actually use them inside a python script. We will first see .pt models, and then for .onnx models we will give you an example python class that’s able to use them similarly to .pt models, with some differences we’ll talk about later.
+
+##### .pt models
+
+First you will need the ultralytics python library.
+
+Then, assuming you have a variable named “model_path” which is a string containing the model’s relative or absolute file path (look it up on google if you don’t know what I mean, you’ll need it for other things).  
+Then it’s straightforward loading the model :  
+```python  
+from ultralytics import YOLO  
+model_path = r“your_model_path”  
+model = YOLO(model_path)  
+```  
+The r in front of the “ of model_path makes it so Python doesn’t annoy you because a path can have back-slashes,  in case you copy the path from the windows explorer.
+
+To test the model, you’ll first need to get the image you want to detect things on.  
+You could load them from a file with   
+```python  
+#...  
+image_path = r'...'  
+image = cv2.imread(image_path)  
+```  
+Or if you’re getting it from another source, be sure that the images’ colors aren’t inverted, because it’s something that cause me a lot of pain, using images that were BGR when they’re supposed to be RGB (means the red and blue pixel values were swapped).  
+To check, you can just save the image to a file with  
+```python  
+# you get your image variable…  
+cv2.imwrite(r“the path of where you want to save the image”, image)  
+```  
+Once you have your image, you can do for example :  
+```python  
+results = model.predict(source=image, conf=0.6, verbose=False, device='gpu')[0]  
+```  
+The only necessary parameter is source but the others are useful too :
+
+- Verbose : by default for each time you use the model, it will say something in the console, but if you’re using it many times per second it would just be spam  
+- device=’gpu’ : if you have the gpu version of the torch library (more on that later) and you have a gpu, you can make it use the gpu for much faster detections. Other device value would be ‘cpu’  
+- Conf : For each detection, the model will assign a score between 0 and 1, and it’s how sure it is about it’s detection (like, how sure it is that the thing it detected is an enemy) so the conf parameter is “what’s the minimum confidence where I should keep a detection” it depends on the model, but usually a better trained model would have higher confidence in its detections.
+
+results will contain a list of [Results](https://docs.ultralytics.com/modes/predict/#working-with-results) objects, but we only take the first element because when giving a single image there will always have only one element.  
+You can easily get those detections as a list of dicts (where each element is one detection, for example one enemy or one tile) with  
+```python  
+results_data = json.loads(result.to_json())  
+```  
+Each of these elements/dicts have 2 very interesting keys :
+
+- “name” : The name of the object detected (because you’ll probably need to different things depending on what object is detected)  
+- “box” : A dict of the detected object’s coordinate as a rectangle  
+  - “x1”  
+  - “x2”  
+  - “y1”  
+  - “x2”
+
+Here’s an example on how you would get a list of objects and their center coordinates :  
+```python  
+detections = []  
+for item in results_data:  
+    box = item["box"]  
+    if not box:  
+        continue  
+    center_x = (box['x1'] + box['x2']) * opposite_scale_factor / 2  
+    center_y = (box['y1'] + box['y2']) * opposite_scale_factor / 2  
+    detections.append((item['name'], (center_x, center_y)))  
+```  
+You can then use the results whenever you want to in your logic.
+
+#### Making your own model
+
+To make your own Vision model, you will need 2 things in most cases : a dataset and a base model.
+
+A dataset is a list of labeled images, which means a list of images where you also know exactly the coordinates of every element you want to detect.  
+For example, if you want to make a model that detects cats, you need a lot of images containing cats but also where the cat is on that image. To tell “where the cat is” you would usually “draw a rectangle that englobes the cat” which is what we call a bounding box. You can draw a more detailed polygon in some specific cases (it depends on the model type, which we’ll see later), but as of writing this, we’ll consider only bounding boxes.  
+The format of how you store the information depends on how you’ll train the model.
+
+Let’s now see what images to put in your dataset :  
+In your dataset, you will need images that contain what you want to detect, but also images that don't contain it, and images that contain what you want to detect, but also things that are similar but you don’t want to detect.  
+Let me explain : if we want to make a model that detects cats, but we give it only images that contain cats, then it might learn that there’s at least one cat in every image, even if there aren’t.  
+Another example for the part “also things that are similar”, would be that if on your images there are only cats and no other images, it might think that a dog is a cat because it’s “close enough” and it was never told that things like that wouldn’t be cats.
+
+In short : Your dataset should contain images with what you want to detect, images without the thing you want to detect, images with/without what you want to detect and with things you want the model not to detect.
+
+Once you have your images, you want to label them with the information about the objects inside.  
+There are many apps and websites that you can use to label your images, such as Label Studio or Roboflow.
+
+Roboflow is the site I would recommend as it has a lot of useful features, you can easily import your images, and label them inside the site, and then export the dataset in a lot of different formats depending on the model you want to train. They also provide you with a Google Collab Notebook to train your model so you barely need any coding knowledge.
+
+Now, imagine you have your dataset, and you want to train a model, where do you start ?   
+First, you need to find a base model. Because you realistically won’t create the model architecture yourself and everything that goes around that.  
+The base model I recommend is a YOLO type model, which is the easiest to train and use, and is the most reliable I know of.  
+For YOLO models, the labels are stored as .txt files with the same name as the image file.  
+Your folder structure needs to resemble this :  
+![pycharm64_64GTrwmTJi](https://github.com/user-attachments/assets/b202eb6d-da1d-4952-acab-56ba0b6e9d19)
+
+Every image in the train or val folder needs to have their .txt counterpart in the train or val folder of the labels folder.  
+Train folder is for the images that your model will actually see while training, while the Val folder contains image that the model will not see and instead they will be used to evaluate the model on images it hasn’t seen before. On 1000 images, you usually keep 100-300 images for evaluation.
+
+Now let’s imagine those two folders are inside a dataset folder, the simplest way to train a YOLO model is using the ultralytics package (for YOLOv8 and YOLOv11) :  
+```python  
+   results = model.train(  
+        data='dataset',  
+        epochs=100,  
+        imgsz=640,  
+        batch=20,  
+    )  
+```  
+Data being the path to the folder containing your dataset, epochs is “the amount of times your model will see every image” and usually the more the better, up to a certain point where it either doesn’t learn anything new, or worse, it does something called “overfitting”.  
+Overfitting is when a model becomes really good on the data it was trained of but it’s not very good when it sees images it hasn’t seen before, which makes the model pretty much useless.  
+You can usually see it because while training you will see the accuracy of the model on the training dataset and on the val dataset, and if the accuracy of the training dataset is much bigger, then it’s overfitting. (You can always ask chatgpt)
+
+The imgsz parameter is the size of your images, because YOLO only supports square images (it will do the pre-processing of images automatically no matter the images you give it).  
+Having a resolution too low will make it harder for the model to learn because it will be missing details, while making it too high can also make the training harder because there are more details so there can be more distracting details, and also it will make training much slower and require more vram/ram.  
+640 is the default value and is usually good enough.  
+Batch is how many images the model will train on at the same time. It helps it generalize more and also speeds up training, but how high you can put that depends on your ram and your GPU’s vram, so just try making it higher until you see it use too much of either. (Training without a GPU isn’t recommended).  
+There are other parameters that you can research on your own, but in the end the model will be in runs/run_name/weights as last.pt
+
+Congrats you now have trained your model. I recommend you test it on images it wasn’t trained on and compare the results with previous models to be sure it actually improved.
+
+# Additional Info
+
+## Tips
+
+### Torch GPU version
+
+If you have an Nvidia GPU, you can get better performance out of most models (especially ultralytics .pt ones) by installing a gpu-specific version of the torch library.  
+You can get the installation command from their website depending on your settings :  
+[https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/)   
+![chrome_Uxxlei0Yds](https://github.com/user-attachments/assets/c47b6adf-976a-4563-9a37-9175246cd03a)
+
+**Note :** You will need to install CUDA and Cudnn on your computer for it to work on Windows, look it up online.
+
+### PyGetWindow
+
+PyGetWindow is a useful python library that allows you to get information about open windows and also control them.  
+For example if you want to get the LDPlayer window :  
+```python  
+import pygetwindow  
+window = pygetwindow.getWindowsWithTitle('LDPlayer')[0]  
+```  
+Using that window you can get useful information such as it’s x and y position, it’s width, it’s height, which are useful if you want to use relative coordinates in your bot when having to click or look for something.  
+You can also use it to make a specific window, to minimize it, to maximize it, to be sure it’s in the good state :  
+```python  
+if window.isMinimized:  
+  window.restore()
+
+try:  
+  window.activate()  
+except: # if the window is already active, it would give an error  
+  pass
+
+window.maximize()  
+```  
+This is how PylaAI makes sure the app is visible and active and maximized.  
+The one inconvenient thing is that you don’t have any access over if the window is in f11 full screen mode.
+
+### Color Detection
+
+Color detection is looking for a specific range of color on a screenshot and using that to detect information, usually with something called HSV masking.  
+It’s mostly suggested when wanting to detect the player/allies/opponents by detecting the colored circles under the brawlers. That’s how PylaAI used to detect entities before switching to Object Detection, because even if it’s way faster, it’s less stable.
+
+An example of usage in Pyla is detecting when the player gets idle disconnected because it’s only when there’s an error message that there’s a lot of a specific type of gray pixel.  
+It’s also used to detect if the gadget or hypercharge is ready by looking for the specific green/purple pixels in a small area (the smaller the area you can reliably use, the more accurate it gets, because there’s less pixels that could be distracting the thing we want to find).  
