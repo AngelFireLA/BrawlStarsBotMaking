@@ -362,3 +362,20 @@ It’s mostly suggested when wanting to detect the player/allies/opponents by de
 
 An example of usage in Pyla is detecting when the player gets idle disconnected because it’s only when there’s an error message that there’s a lot of a specific type of gray pixel.  
 It’s also used to detect if the gadget or hypercharge is ready by looking for the specific green/purple pixels in a small area (the smaller the area you can reliably use, the more accurate it gets, because there’s less pixels that could be distracting the thing we want to find).  
+
+# Contributing 
+
+If you want to contribute to this repository, there's a few things you can do :
+- help in providing more information a topic mentionned here
+- bring new information or tools or other things that weren't mentionned here
+- do one of the things I'll mention in the TodoList
+- submit a new mother or other ressource file
+
+## Todo
+- Convert the information on this page into a GitHub Wiki for better organisation
+- Add examples and pratical use of color detection
+- give examples of other types of models other than YOLO
+- show how to use .onnx models
+- start a section about Reinforcement Learning (some ideas : what it is, the basic terms, how it could work in brawl stars, some algorithms that could work, ideas, etc...)
+
+# Join PylaAI discord to talk to other Devs and maybe join a potential Brawl Stars Bot competition : https://discord.com/invite/ehMRX9hpFN 
