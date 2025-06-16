@@ -1,0 +1,7 @@
+opencv-python
+bettercam
+pygetwindow
+torch (if possible use the gpu version, see the section in Additional info)
+ultralytics
+easyocr
+pyautogui
