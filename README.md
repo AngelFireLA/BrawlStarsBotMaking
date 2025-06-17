@@ -366,6 +366,10 @@ It’s also used to detect if the gadget or hypercharge is ready by looking for 
 ## Libraries Starter Pack
 See Python Libraries starter pack.txt for what I would recommend as libraries to make a good bot.
 
+## Contains
+- A text file containing all the best libraries to use in my opinion (some speed has been sacrificed for some simplicity and for non-windows users)
+- A python script to easily test your .pt models on images.
+
 # Contributing 
 
 If you want to contribute to this repository, there's a few things you can do :
