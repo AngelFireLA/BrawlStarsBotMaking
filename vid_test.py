@@ -13,6 +13,9 @@ model_classes = []
 vid_path = "example_game2.mp4"
 output_path = "output_video2.mp4"
 
+colors = {
+    x: (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for x in model_classes
+}
 
 class Detect:
     def __init__(self, model_path, ignore_classes=None, classes=None, input_size=(640, 640)):
@@ -135,9 +138,6 @@ class Detect:
 
 
 def draw_boxes(img, detections):
-    colors = {
-        x: (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for x in model_classes
-    }
     default_color = (0, 0, 0)
     for class_name, boxes in detections.items():
         color = colors.get(class_name, default_color)
