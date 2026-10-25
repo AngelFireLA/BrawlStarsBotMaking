@@ -267,7 +267,103 @@ for item in results_data:
 ```  
 You can then use the results whenever you want to in your logic.
 
-#### Making your own model
+### Semantic terrain detection (PylaWallDetectorV3)
+
+**PylaWallDetectorV3** is the third wall-model release in this repository. It is the semantic checkpoint from the internal training run `terrain20k_v4_fine_832`; the training run's **v4** name does not change the public model's **V3** name.
+
+Unlike V1 and V2, V3 labels every pixel with a terrain class instead of returning object bounding boxes. It predicts **ground footprints**: where terrain occupies the ground, including terrain obscured by characters or effects. This is useful for separating walking obstacles, shooting obstacles, bushes and special floor tiles. These are model predictions, so check the results on your own screenshots before using them for movement.
+
+Files:
+
+- [PyTorch checkpoint](models/wall%20detection/.pt/PylaWallDetectorV3.pt)
+- [ONNX deploy model](models/wall%20detection/.onnx/PylaWallDetectorV3.onnx)
+- [Class mapping and input/output manifest](models/wall%20detection/.onnx/PylaWallDetectorV3.json) — keep this next to the ONNX file.
+- [Semantic testing script](semantic_model_tester.py)
+
+The ONNX model uses the YOLO26 semantic architecture and runs without PyTorch or Ultralytics. The `.pt` checkpoint is also provided for training and compatible Ultralytics installations with the semantic task. The existing `.pt model tester.py` is intended for object detectors; use the semantic tester for V3.
+
+#### Test a screenshot or folder
+
+From the repository folder, install the semantic tester's dependencies:
+
+```sh
+python -m pip install -r requirements-semantic.txt
+```
+
+Run it on a screenshot:
+
+```sh
+python semantic_model_tester.py --source "screenshot.png"
+```
+
+The script selects the included V3 model automatically. It shows the original image, a semantic overlay and a color-coded class map with a legend. Press a key to continue, or Escape to stop. To save results without opening windows, or to process a folder recursively:
+
+```sh
+python semantic_model_tester.py --source "screenshot.png" --no-show
+python semantic_model_tester.py --source "screenshots" --limit 10 --no-show
+```
+
+Results are saved under `semantic_previews/` by default:
+
+- `<image>.preview.png`: original, overlay and class map with a legend.
+- `<image>.classes.png`: a single-channel, source-resolution PNG containing class IDs **0–12**. This is data, so it will look almost black in an ordinary image viewer.
+- `<image>.colors.png`: a color-coded class map.
+- `predictions.json`: class names, class colors, provider, processing times and the fraction of each image covered by each class. Coverage measures area, not confidence or accuracy.
+
+Folder inputs keep their relative subfolders. Choose an output directory outside the source image folder to avoid processing generated previews on a later run.
+
+The default is CPU inference. If your ONNX Runtime installation provides DirectML or CUDA, select it with `--provider directml` or `--provider cuda`. Use `--help` for all options, including `--model`, `--output`, `--alpha` and `--raw`:
+
+```sh
+python semantic_model_tester.py --source "screenshot.png" --provider directml
+python semantic_model_tester.py --source "screenshot.png" --raw --no-show
+```
+
+Normal previews filter weak pixels and small or weak connected regions. The pixel thresholds are 0.60 for walls, bushes and indestructible walls; 0.65 for rope fences; 0.75 for water; and 0.50 for special floor tiles. Regions smaller than 0.06% of the image content or with mean confidence below 0.80 are removed. Ground and out-of-bounds regions are exempt from component removal. `--raw` shows the model's unfiltered argmax classes instead.
+
+#### Classes and bot integration
+
+| ID | Class | Meaning |
+| --- | --- | --- |
+| 0 | `ground` | Ordinary walkable ground |
+| 1 | `wall` | Destructible wall; blocks walking and ordinary shots |
+| 2 | `bush` | Walkable cover |
+| 3 | `rope_fence` | Blocks walking; ordinary shots pass over it |
+| 4 | `water` | Blocks ordinary walking; shots pass over it |
+| 5 | `out_of_bounds` | Terrain outside the playable map; exclude it from walking |
+| 6 | `indestructible_wall` | Indestructible wall; blocks walking and ordinary shots |
+| 7 | `jump_pad` | Jump pad |
+| 8 | `teleport` | Teleporter |
+| 9 | `heal_pad` | Healing pad |
+| 10 | `speed` | Speed-increasing floor |
+| 11 | `slow` | Slowing floor, including snow/ice labels |
+| 12 | `damage` | Damaging floor |
+
+The special floor classes describe terrain; your bot decides how to use or avoid it. Movement abilities and attacks that cross walls or water need their own brawler-specific rules. For ordinary walking and shots, the returned class map can be used like this:
+
+```python
+import cv2
+import numpy as np
+from semantic_model_tester import SemanticDetector
+
+detector = SemanticDetector()  # load once and reuse
+image = cv2.imread("screenshot.png")
+classes, processing_ms = detector.predict(image)
+
+walking_blockers = np.isin(classes, [1, 3, 4, 5, 6])
+shooting_blockers = np.isin(classes, [1, 6])
+bushes = classes == 2
+```
+
+The deployed ONNX contract is:
+
+- Input `images`: **RGB float32 `[1, 3, 480, 832]`**, values in `[0, 1]`. Resize while preserving aspect ratio, then add centered padding with value `114 / 255`.
+- Output `class_ids`: **uint8 `[1, 480, 832]`**, the winning class ID at each pixel.
+- Output `confidence`: **float32 `[1, 480, 832]`**, the softmax probability of that winning class.
+
+Remove padding from both output maps before mapping them back to screenshot coordinates. Resize class IDs with **nearest-neighbor interpolation** so IDs remain integers. There are no box coordinates, per-object results or non-maximum suppression in this output. The included tester handles preprocessing, padding removal, filtering and resizing.
+
+### Making your own model
 
 To make your own Vision model, you will need 2 things in most cases : a dataset and a base model.
 
@@ -310,7 +406,7 @@ Data being the path to the folder containing your dataset, epochs is “the amou
 Overfitting is when a model becomes really good on the data it was trained of but it’s not very good when it sees images it hasn’t seen before, which makes the model pretty much useless.  
 You can usually see it because while training you will see the accuracy of the model on the training dataset and on the val dataset, and if the accuracy of the training dataset is much bigger, then it’s overfitting. (You can always ask chatgpt)
 
-The imgsz parameter is the size of your images, because YOLO only supports square images (it will do the pre-processing of images automatically no matter the images you give it).  
+The imgsz parameter controls the training input size. YOLO also supports rectangular inputs; the semantic V3 export above uses 480×832. Input resizing and padding depend on the model and its export.
 Having a resolution too low will make it harder for the model to learn because it will be missing details, while making it too high can also make the training harder because there are more details so there can be more distracting details, and also it will make training much slower and require more vram/ram.  
 640 is the default value and is usually good enough.  
 Batch is how many images the model will train on at the same time. It helps it generalize more and also speeds up training, but how high you can put that depends on your ram and your GPU’s vram, so just try making it higher until you see it use too much of either. (Training without a GPU isn’t recommended).  
@@ -373,6 +469,7 @@ https://github.com/PylaAI/PylaAI
 ## Contains
 - A text file containing all the best libraries to use in my opinion (some speed has been sacrificed for some simplicity and for non-windows users)
 - A python script to easily test your .pt models on images.
+- A standalone semantic ONNX tester, with source-resolution class masks and color previews for PylaWallDetectorV3.
 
 # Contributing 
 
@@ -386,7 +483,7 @@ If you want to contribute to this repository, there's a few things you can do :
 - Convert the information on this page into a GitHub Wiki for better organisation
 - Add examples and pratical use of color detection
 - give examples of other types of models other than YOLO
-- show how to use .onnx models
+- Add more ONNX examples beyond the included semantic terrain tester
 - start a section about Reinforcement Learning (some ideas : what it is, the basic terms, how it could work in brawl stars, some algorithms that could work, ideas, etc...)
 - start a section about the different libraries to be used to make a menu (customtkinter, pygame, PyQT5 etc...)
 
@@ -398,6 +495,7 @@ If you want to contribute to this repository, there's a few things you can do :
 |PylaSpecificBrawlerDetectorV1|YOLOv8|specific brawler detection and wall detection |iyordanov| ['ammo', 'ball', 'damage_taken', 'defeat', 'draw', 'enemy_health_bar', 'enemy_position', 'gadget', 'gem', 'hypercharge', 'player_health_bar', 'player_position', 'respawning', 'shot_success', 'super', 'teammate_health bar', 'teammate_position', 'victory', 'wall', 'bush', '8bit', 'amber', 'ash', 'barley', 'bea', 'belle', 'bibi', 'bo', 'bonnie', 'brock', 'bull', 'buster', 'buzz', 'byron', 'carl', 'charlie', 'chester', 'chuck', 'colette', 'colt', 'cordelious', 'crow', 'darryl', 'doug', 'dynamike', 'edgar', 'primo', 'emz', 'eve', 'fang', 'frank', 'gale', 'gene', 'grom', 'gray', 'griff', 'gus', 'hank', 'jacky', 'janet', 'jessie', 'kit', 'larry_lawrie', 'leon', 'lola', 'lou', 'mandy', 'maisie', 'max', 'meg', 'melodie', 'mico', 'mortis', 'mrp', 'nani', 'nita', 'otis', 'pam', 'penny', 'piper', 'poco', 'rico', 'rosa', 'rt', 'ruffs', 'sam', 'sandy', 'shelly', 'spike', 'sprout', 'stu', 'squeak', 'surge', 'tara', 'tick', 'willow', 'lily', 'enemy_ability', 'ally_ability'] | .pt and .onnx |16/06/2025|
 |PylaWallDetectorV1|YOLOv11|wall detection|angelfire| ["bush", "blue_post", "block_of_stone&grass", "cubic_wall", "wooden_barrel", "wooden_box", "wooden_box", "wooden_fence", "invincible_wall", "cactus", "potted_plant" ,"yellow_wall", "blue_barrel", "metallic_fence", "blue_weights"] | .pt and .onnx |16/06/2025|
 |PylaWallDetectorV2|YOLOv11|wall detection|angelfire| ["wall", "bush", "close_bush"] | .pt and .onnx |30/03/2026|
+|PylaWallDetectorV3|YOLO26 semantic|semantic terrain / ground-footprint segmentation|angelfire| ["ground", "wall", "bush", "rope_fence", "water", "out_of_bounds", "indestructible_wall", "jump_pad", "teleport", "heal_pad", "speed", "slow", "damage"] | .pt, .onnx and .json |25/10/2026|
 
 To submit a model, make a pull request containing your model in the correct folder (or in a new model type folder if it doesn't fit in any current one) and also add a line to the Available Models Table with the necessary info
 
