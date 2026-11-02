@@ -1,0 +1,20 @@
+{
+  "checkpoint": "../.pt/PylaGamemodeElementsDetectorV1.pt",
+  "task": "pose",
+  "classes": {
+    "0": "ball",
+    "1": "power_cube",
+    "2": "box",
+    "3": "teammate_indicator"
+  },
+  "keypoints": ["point"],
+  "kpt_shape": [1, 3],
+  "width": 640,
+  "height": 384,
+  "input": "images: RGB float32 [1,3,384,640] in [0,1]. Aspect-preserving resize then centred padding (114/255).",
+  "output": "output0 float32 [1,11,5040] is cx, cy, w, h, 4 class scores, then the keypoint x, y, visibility. Apply a confidence threshold and NMS yourself.",
+  "point": "ground position for ball, power_cube and box; arrow tip for teammate_indicator (the HUD arrow pointing to an off-screen ally)",
+  "path": "PylaGamemodeElementsDetectorV1.onnx",
+  "model_name": "PylaGamemodeElementsDetectorV1",
+  "training_run": "gamemode_v8_n_640"
+}

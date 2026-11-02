@@ -1,4 +1,4 @@
-"""Preview PylaWallDetectorV3 semantic terrain on an image or image folder. See --help."""
+"""Preview PylaWallDetectorV4 semantic terrain on an image or image folder. See --help."""
 import argparse
 import json
 import math
@@ -11,17 +11,17 @@ import numpy as np
 import onnxruntime as ort
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_MODEL = ROOT / 'models' / 'wall detection' / '.onnx' / 'PylaWallDetectorV3.onnx'
+DEFAULT_MODEL = ROOT / 'models' / 'wall detection' / '.onnx' / 'PylaWallDetectorV4.onnx'
 IMAGE_SUFFIXES = {'.png', '.jpg', '.jpeg', '.bmp', '.webp', '.tif', '.tiff'}
 COLORS_RGB = {
     'ground': (225, 207, 170), 'wall': (255, 139, 35), 'bush': (65, 175, 80),
     'rope_fence': (163, 72, 205), 'water': (35, 133, 245), 'out_of_bounds': (95, 60, 95),
     'indestructible_wall': (150, 25, 25), 'jump_pad': (255, 105, 200), 'teleport': (120, 70, 255),
     'heal_pad': (90, 255, 190), 'speed': (255, 245, 60), 'slow': (160, 225, 255),
-    'damage': (175, 255, 20),
+    'damage': (175, 255, 20), 'fragile': (0, 190, 170),
 }
 MIN_CONFIDENCE = {'wall': .60, 'bush': .60, 'rope_fence': .65, 'water': .75,
-                  'out_of_bounds': .0, 'indestructible_wall': .60}
+                  'out_of_bounds': .0, 'indestructible_wall': .60, 'fragile': .60}
 
 
 class SemanticDetector:

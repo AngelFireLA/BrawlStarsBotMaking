@@ -296,7 +296,7 @@ Run it on a screenshot:
 python semantic_model_tester.py --source "screenshot.png"
 ```
 
-The script selects the included V3 model automatically. It shows the original image, a semantic overlay and a color-coded class map with a legend. Press a key to continue, or Escape to stop. To save results without opening windows, or to process a folder recursively:
+The script selects the newest included model (PylaWallDetectorV4, which adds the `fragile` class) automatically; pass `--model` to use V3. It shows the original image, a semantic overlay and a color-coded class map with a legend. Press a key to continue, or Escape to stop. To save results without opening windows, or to process a folder recursively:
 
 ```sh
 python semantic_model_tester.py --source "screenshot.png" --no-show
@@ -306,7 +306,7 @@ python semantic_model_tester.py --source "screenshots" --limit 10 --no-show
 Results are saved under `semantic_previews/` by default:
 
 - `<image>.preview.png`: original, overlay and class map with a legend.
-- `<image>.classes.png`: a single-channel, source-resolution PNG containing class IDs **0–12**. This is data, so it will look almost black in an ordinary image viewer.
+- `<image>.classes.png`: a single-channel, source-resolution PNG containing class IDs **0–13**. This is data, so it will look almost black in an ordinary image viewer.
 - `<image>.colors.png`: a color-coded class map.
 - `predictions.json`: class names, class colors, provider, processing times and the fraction of each image covered by each class. Coverage measures area, not confidence or accuracy.
 
@@ -319,7 +319,7 @@ python semantic_model_tester.py --source "screenshot.png" --provider directml
 python semantic_model_tester.py --source "screenshot.png" --raw --no-show
 ```
 
-Normal previews filter weak pixels and small or weak connected regions. The pixel thresholds are 0.60 for walls, bushes and indestructible walls; 0.65 for rope fences; 0.75 for water; and 0.50 for special floor tiles. Regions smaller than 0.06% of the image content or with mean confidence below 0.80 are removed. Ground and out-of-bounds regions are exempt from component removal. `--raw` shows the model's unfiltered argmax classes instead.
+Normal previews filter weak pixels and small or weak connected regions. The pixel thresholds are 0.60 for walls, fragile walls, bushes and indestructible walls; 0.65 for rope fences; 0.75 for water; and 0.50 for special floor tiles. Regions smaller than 0.06% of the image content or with mean confidence below 0.80 are removed. Ground and out-of-bounds regions are exempt from component removal. `--raw` shows the model's unfiltered argmax classes instead.
 
 #### Classes and bot integration
 
@@ -338,6 +338,7 @@ Normal previews filter weak pixels and small or weak connected regions. The pixe
 | 10 | `speed` | Speed-increasing floor |
 | 11 | `slow` | Slowing floor, including snow/ice labels |
 | 12 | `damage` | Damaging floor |
+| 13 | `fragile` | Wall that breaks from any attack (V4 only); blocks walking and ordinary shots until destroyed |
 
 The special floor classes describe terrain; your bot decides how to use or avoid it. Movement abilities and attacks that cross walls or water need their own brawler-specific rules. For ordinary walking and shots, the returned class map can be used like this:
 
@@ -350,8 +351,8 @@ detector = SemanticDetector()  # load once and reuse
 image = cv2.imread("screenshot.png")
 classes, processing_ms = detector.predict(image)
 
-walking_blockers = np.isin(classes, [1, 3, 4, 5, 6])
-shooting_blockers = np.isin(classes, [1, 6])
+walking_blockers = np.isin(classes, [1, 3, 4, 5, 6, 13])  # 13 (fragile) is V4 only
+shooting_blockers = np.isin(classes, [1, 6, 13])
 bushes = classes == 2
 ```
 
@@ -496,6 +497,9 @@ If you want to contribute to this repository, there's a few things you can do :
 |PylaWallDetectorV1|YOLOv11|wall detection|angelfire| ["bush", "blue_post", "block_of_stone&grass", "cubic_wall", "wooden_barrel", "wooden_box", "wooden_box", "wooden_fence", "invincible_wall", "cactus", "potted_plant" ,"yellow_wall", "blue_barrel", "metallic_fence", "blue_weights"] | .pt and .onnx |16/06/2025|
 |PylaWallDetectorV2|YOLOv11|wall detection|angelfire| ["wall", "bush", "close_bush"] | .pt and .onnx |30/03/2026|
 |PylaWallDetectorV3|YOLO26 semantic|semantic terrain / ground-footprint segmentation|angelfire| ["ground", "wall", "bush", "rope_fence", "water", "out_of_bounds", "indestructible_wall", "jump_pad", "teleport", "heal_pad", "speed", "slow", "damage"] | .pt, .onnx and .json |25/10/2026|
+|PylaWallDetectorV4|YOLO26 semantic|semantic terrain / ground-footprint segmentation|angelfire| ["ground", "wall", "bush", "rope_fence", "water", "out_of_bounds", "indestructible_wall", "jump_pad", "teleport", "heal_pad", "speed", "slow", "damage", "fragile"] | .pt, .onnx and .json |02/11/2026|
+|PylaEntityDetectorV3|YOLO26 pose|entity detection (ground keypoint)|angelfire| ["player", "teammate", "enemy", "teammate_spawnable", "enemy_spawnable", "ignored_spawnable"] | .pt, .onnx and .json |02/11/2026|
+|PylaGamemodeElementsDetectorV1|YOLO26 pose|gamemode elements detection (ground keypoint)|angelfire| ["ball", "power_cube", "box", "teammate_indicator"] | .pt, .onnx and .json |02/11/2026|
 
 To submit a model, make a pull request containing your model in the correct folder (or in a new model type folder if it doesn't fit in any current one) and also add a line to the Available Models Table with the necessary info
 

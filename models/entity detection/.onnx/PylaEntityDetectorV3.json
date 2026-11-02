@@ -1,0 +1,23 @@
+{
+  "checkpoint": "../.pt/PylaEntityDetectorV3.pt",
+  "task": "pose",
+  "classes": {
+    "0": "player",
+    "1": "teammate",
+    "2": "enemy",
+    "3": "teammate_spawnable",
+    "4": "enemy_spawnable",
+    "5": "ignored_spawnable"
+  },
+  "keypoints": ["ground"],
+  "kpt_shape": [1, 3],
+  "width": 640,
+  "height": 384,
+  "input": "images: RGB float32 [1,3,384,640] in [0,1]. Aspect-preserving resize then centred padding (114/255).",
+  "output": "output0 float32 [1,13,5040] is cx, cy, w, h, 6 class scores, then the keypoint x, y, visibility. Apply a confidence threshold and NMS yourself.",
+  "box": "full entity extent; ground circle width, badge/model top through circle/model bottom",
+  "point": "ground position, not box centre",
+  "path": "PylaEntityDetectorV3.onnx",
+  "model_name": "PylaEntityDetectorV3",
+  "training_run": "entities_v8_ignore_n_640"
+}
