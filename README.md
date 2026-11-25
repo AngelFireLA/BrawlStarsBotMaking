@@ -11,6 +11,21 @@ Notes :
 
 This is, at the time of writing (28/05/2025), only my knowledge, so feel free to contact me on Discord (link at the end) or make a pull request.
 
+# Current Available Models
+| Model Name | Model Base | Model Type | Author | Classes | File Extensions | Date Uploaded |
+|------------|------------|------------|--------|---------|------------------|----------------|
+|PylaEntityDetectorV1|YOLOv8|entity detection|iyordanov| ['enemy', 'player', 'teammate'] | .pt and .onnx |16/06/2025|
+|PylaEntityDetectorV2|YOLOv11|entity detection|REDACTED| ['enemy', 'teammate', 'player'] | .pt and .onnx |16/06/2025|
+|PylaSpecificBrawlerDetectorV1|YOLOv8|specific brawler detection and wall detection |iyordanov| ['ammo', 'ball', 'damage_taken', 'defeat', 'draw', 'enemy_health_bar', 'enemy_position', 'gadget', 'gem', 'hypercharge', 'player_health_bar', 'player_position', 'respawning', 'shot_success', 'super', 'teammate_health bar', 'teammate_position', 'victory', 'wall', 'bush', '8bit', 'amber', 'ash', 'barley', 'bea', 'belle', 'bibi', 'bo', 'bonnie', 'brock', 'bull', 'buster', 'buzz', 'byron', 'carl', 'charlie', 'chester', 'chuck', 'colette', 'colt', 'cordelious', 'crow', 'darryl', 'doug', 'dynamike', 'edgar', 'primo', 'emz', 'eve', 'fang', 'frank', 'gale', 'gene', 'grom', 'gray', 'griff', 'gus', 'hank', 'jacky', 'janet', 'jessie', 'kit', 'larry_lawrie', 'leon', 'lola', 'lou', 'mandy', 'maisie', 'max', 'meg', 'melodie', 'mico', 'mortis', 'mrp', 'nani', 'nita', 'otis', 'pam', 'penny', 'piper', 'poco', 'rico', 'rosa', 'rt', 'ruffs', 'sam', 'sandy', 'shelly', 'spike', 'sprout', 'stu', 'squeak', 'surge', 'tara', 'tick', 'willow', 'lily', 'enemy_ability', 'ally_ability'] | .pt and .onnx |16/06/2025|
+|PylaWallDetectorV1|YOLOv11|wall detection|angelfire| ["bush", "blue_post", "block_of_stone&grass", "cubic_wall", "wooden_barrel", "wooden_box", "wooden_box", "wooden_fence", "invincible_wall", "cactus", "potted_plant" ,"yellow_wall", "blue_barrel", "metallic_fence", "blue_weights"] | .pt and .onnx |16/06/2025|
+|PylaWallDetectorV2|YOLOv11|wall detection|angelfire| ["wall", "bush", "close_bush"] | .pt and .onnx |30/03/2026|
+|PylaWallDetectorV3|YOLO26 semantic|semantic terrain / ground-footprint segmentation|angelfire| ["ground", "wall", "bush", "rope_fence", "water", "out_of_bounds", "indestructible_wall", "jump_pad", "teleport", "heal_pad", "speed", "slow", "damage"] | .pt, .onnx and .json |25/10/2026|
+|PylaWallDetectorV4|YOLO26 semantic|semantic terrain / ground-footprint segmentation|angelfire| ["ground", "wall", "bush", "rope_fence", "water", "out_of_bounds", "indestructible_wall", "jump_pad", "teleport", "heal_pad", "speed", "slow", "damage", "fragile"] | .pt, .onnx and .json |02/11/2026|
+|PylaEntityDetectorV3|YOLO26 pose|entity detection (ground keypoint)|angelfire| ["player", "teammate", "enemy", "teammate_spawnable", "enemy_spawnable", "ignored_spawnable"] | .pt, .onnx and .json |02/11/2026|
+|PylaGamemodeElementsDetectorV1|YOLO26 pose|gamemode elements detection (ground keypoint)|angelfire| ["ball", "power_cube", "box", "teammate_indicator"] | .pt, .onnx and .json |02/11/2026|
+
+To submit a model, make a pull request containing your model in the correct folder (or in a new model type folder if it doesn't fit in any current one) and also add a line to the Available Models Table with the necessary info
+
 # Setting up the basics
 
 ## Setting up the environment
@@ -487,20 +502,5 @@ If you want to contribute to this repository, there's a few things you can do :
 - Add more ONNX examples beyond the included semantic terrain tester
 - start a section about Reinforcement Learning (some ideas : what it is, the basic terms, how it could work in brawl stars, some algorithms that could work, ideas, etc...)
 - start a section about the different libraries to be used to make a menu (customtkinter, pygame, PyQT5 etc...)
-
-# Current Available Models
-| Model Name | Model Base | Model Type | Author | Classes | File Extensions | Date Uploaded |
-|------------|------------|------------|--------|---------|------------------|----------------|
-|PylaEntityDetectorV1|YOLOv8|entity detection|iyordanov| ['enemy', 'player', 'teammate'] | .pt and .onnx |16/06/2025|
-|PylaEntityDetectorV2|YOLOv11|entity detection|REDACTED| ['enemy', 'teammate', 'player'] | .pt and .onnx |16/06/2025|
-|PylaSpecificBrawlerDetectorV1|YOLOv8|specific brawler detection and wall detection |iyordanov| ['ammo', 'ball', 'damage_taken', 'defeat', 'draw', 'enemy_health_bar', 'enemy_position', 'gadget', 'gem', 'hypercharge', 'player_health_bar', 'player_position', 'respawning', 'shot_success', 'super', 'teammate_health bar', 'teammate_position', 'victory', 'wall', 'bush', '8bit', 'amber', 'ash', 'barley', 'bea', 'belle', 'bibi', 'bo', 'bonnie', 'brock', 'bull', 'buster', 'buzz', 'byron', 'carl', 'charlie', 'chester', 'chuck', 'colette', 'colt', 'cordelious', 'crow', 'darryl', 'doug', 'dynamike', 'edgar', 'primo', 'emz', 'eve', 'fang', 'frank', 'gale', 'gene', 'grom', 'gray', 'griff', 'gus', 'hank', 'jacky', 'janet', 'jessie', 'kit', 'larry_lawrie', 'leon', 'lola', 'lou', 'mandy', 'maisie', 'max', 'meg', 'melodie', 'mico', 'mortis', 'mrp', 'nani', 'nita', 'otis', 'pam', 'penny', 'piper', 'poco', 'rico', 'rosa', 'rt', 'ruffs', 'sam', 'sandy', 'shelly', 'spike', 'sprout', 'stu', 'squeak', 'surge', 'tara', 'tick', 'willow', 'lily', 'enemy_ability', 'ally_ability'] | .pt and .onnx |16/06/2025|
-|PylaWallDetectorV1|YOLOv11|wall detection|angelfire| ["bush", "blue_post", "block_of_stone&grass", "cubic_wall", "wooden_barrel", "wooden_box", "wooden_box", "wooden_fence", "invincible_wall", "cactus", "potted_plant" ,"yellow_wall", "blue_barrel", "metallic_fence", "blue_weights"] | .pt and .onnx |16/06/2025|
-|PylaWallDetectorV2|YOLOv11|wall detection|angelfire| ["wall", "bush", "close_bush"] | .pt and .onnx |30/03/2026|
-|PylaWallDetectorV3|YOLO26 semantic|semantic terrain / ground-footprint segmentation|angelfire| ["ground", "wall", "bush", "rope_fence", "water", "out_of_bounds", "indestructible_wall", "jump_pad", "teleport", "heal_pad", "speed", "slow", "damage"] | .pt, .onnx and .json |25/10/2026|
-|PylaWallDetectorV4|YOLO26 semantic|semantic terrain / ground-footprint segmentation|angelfire| ["ground", "wall", "bush", "rope_fence", "water", "out_of_bounds", "indestructible_wall", "jump_pad", "teleport", "heal_pad", "speed", "slow", "damage", "fragile"] | .pt, .onnx and .json |02/11/2026|
-|PylaEntityDetectorV3|YOLO26 pose|entity detection (ground keypoint)|angelfire| ["player", "teammate", "enemy", "teammate_spawnable", "enemy_spawnable", "ignored_spawnable"] | .pt, .onnx and .json |02/11/2026|
-|PylaGamemodeElementsDetectorV1|YOLO26 pose|gamemode elements detection (ground keypoint)|angelfire| ["ball", "power_cube", "box", "teammate_indicator"] | .pt, .onnx and .json |02/11/2026|
-
-To submit a model, make a pull request containing your model in the correct folder (or in a new model type folder if it doesn't fit in any current one) and also add a line to the Available Models Table with the necessary info
 
 # Join PylaAI discord to talk to other Devs and maybe join a potential Brawl Stars Bot competition : https://discord.com/invite/ehMRX9hpFN 
